@@ -114,7 +114,13 @@ class CalculatorViewModel(private val preferencesManager: PreferencesManager) : 
 
     fun roundTotal() {
         val currentTotal = totalAmount
-        val roundedTotal = applyRounding(currentTotal)
+        var roundedTotal = applyRounding(currentTotal)
+        
+        // Ensure tip doesn't become negative
+        if (roundedTotal < billAmount) {
+            roundedTotal = ceil(billAmount)
+        }
+
         val newTip = roundedTotal - billAmount
         if (billAmount > 0) {
             val newPercentage = (newTip / billAmount) * 100
