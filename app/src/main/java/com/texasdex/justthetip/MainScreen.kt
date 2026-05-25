@@ -99,7 +99,7 @@ fun MainScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf(10f, 15f, 20f, 25f).forEach { percentage ->
+                listOf(10f, 15f, 20f, 25f, 30f).forEach { percentage ->
                     val isSelected = kotlin.math.abs(viewModel.tipPercentage - percentage) < 0.001
                     Button(
                         onClick = { viewModel.setTipPercentage(percentage) },
@@ -116,16 +116,74 @@ fun MainScreen(
                 }
             }
 
+            if (viewModel.isSplitMode) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextField(
+                        value = viewModel.numGuestsInput,
+                        onValueChange = { viewModel.updateNumGuests(it) },
+                        label = { Text("Guests") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Slider(
+                        value = viewModel.numGuests.toFloat().coerceIn(1f, 20f),
+                        onValueChange = { viewModel.setNumGuests(it.toInt()) },
+                        valueRange = 1f..20f,
+                        steps = 18,
+                        modifier = Modifier.weight(2f)
+                    )
+                }
+            }
+
             HorizontalDivider()
 
-            Column(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 val currencyFormat = NumberFormat.getCurrencyInstance()
-                Text("Tip: ${currencyFormat.format(viewModel.tipAmount)}", style = MaterialTheme.typography.headlineSmall)
-                Text("Total: ${currencyFormat.format(viewModel.totalAmount)}", style = MaterialTheme.typography.headlineMedium)
+                if (viewModel.isSplitMode) {
+
+                    Column(
+                        modifier = if (viewModel.isSplitMode) Modifier.weight(1f) else Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            "Total Tip: ${currencyFormat.format(viewModel.tipAmount)}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            "Total Bill: ${currencyFormat.format(viewModel.totalAmount)}",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        Text(
+                            "Per Guest Tip: ${currencyFormat.format(viewModel.perPersonTip)}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            "Per Guest Total: ${currencyFormat.format(viewModel.perPersonTotal)}",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                } else {
+                    Column(
+                        modifier = if (viewModel.isSplitMode) Modifier.weight(1f) else Modifier.fillMaxWidth()
+                    ) {
+                        Text("Total Tip: ${currencyFormat.format(viewModel.tipAmount)}", style = MaterialTheme.typography.headlineSmall)
+                        Text("Total Bill: ${currencyFormat.format(viewModel.totalAmount)}", style = MaterialTheme.typography.headlineMedium)
+                    }
+
+                }
             }
 
             Row(
@@ -143,6 +201,17 @@ fun MainScreen(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Round Total", fontSize = 12.sp)
+                }
+                Button(
+                    onClick = { viewModel.toggleSplitMode() },
+                    colors = if (viewModel.isSplitMode) {
+                        ButtonDefaults.buttonColors()
+                    } else {
+                        ButtonDefaults.filledTonalButtonColors()
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Split", fontSize = 12.sp)
                 }
             }
 

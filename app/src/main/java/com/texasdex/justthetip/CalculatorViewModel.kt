@@ -22,6 +22,9 @@ class CalculatorViewModel(private val preferencesManager: PreferencesManager) : 
     var defaultPercentage by mutableStateOf(20f)
     var isAtmModeEnabled by mutableStateOf(true)
 
+    var isSplitMode by mutableStateOf(false)
+    var numGuestsInput by mutableStateOf("1")
+
     init {
         viewModelScope.launch {
             defaultPercentage = preferencesManager.defaultPercentage.first()
@@ -47,6 +50,15 @@ class CalculatorViewModel(private val preferencesManager: PreferencesManager) : 
 
     val totalAmount: Double
         get() = billAmount + tipAmount
+
+    val numGuests: Int
+        get() = numGuestsInput.toIntOrNull()?.coerceAtLeast(1) ?: 1
+
+    val perPersonTip: Double
+        get() = if (isSplitMode && numGuests > 0) tipAmount / numGuests else tipAmount
+
+    val perPersonTotal: Double
+        get() = if (isSplitMode && numGuests > 0) totalAmount / numGuests else totalAmount
 
     fun updateBillAmount(input: String) {
         if (!isAtmModeEnabled) {
@@ -93,9 +105,26 @@ class CalculatorViewModel(private val preferencesManager: PreferencesManager) : 
         tipPercentageInput = formatted
     }
 
+    fun toggleSplitMode() {
+        isSplitMode = !isSplitMode
+        if (!isSplitMode) {
+            numGuestsInput = "1"
+        }
+    }
+
+    fun updateNumGuests(input: String) {
+        numGuestsInput = input
+    }
+
+    fun setNumGuests(count: Int) {
+        numGuestsInput = count.toString()
+    }
+
     fun reset() {
         billAmountInput = ""
         isManualBillMode = false
+        isSplitMode = false
+        numGuestsInput = "1"
         tipPercentageInput = if (defaultPercentage % 1 == 0f) {
             defaultPercentage.toInt().toString()
         } else {
@@ -104,36 +133,52 @@ class CalculatorViewModel(private val preferencesManager: PreferencesManager) : 
     }
 
     fun roundTip() {
-        val currentTip = tipAmount
-        val roundedTip = applyRounding(currentTip)
-        if (billAmount > 0) {
-            val newPercentage = (roundedTip / billAmount) * 100
-            tipPercentageInput = "%.4f".format(newPercentage).trimEnd('0').trimEnd('.')
+        if (billAmount <= 0) return
+        
+        val targetTip = if (isSplitMode) {
+            applyRounding(perPersonTip) * numGuests
+        } else {
+            applyRounding(tipAmount)
         }
+        
+        val newPercentage = (targetTip / billAmount) * 100
+        tipPercentageInput = "%.4f".format(newPercentage).trimEnd('0').trimEnd('.')
     }
 
     fun roundTotal() {
-        val currentTotal = totalAmount
-        var roundedTotal = applyRounding(currentTotal)
+        if (billAmount <= 0) return
+        
+        var targetTotal = if (isSplitMode) {
+            applyRounding(perPersonTotal) * numGuests
+        } else {
+            applyRounding(totalAmount)
+        }
         
         // Ensure tip doesn't become negative
-        if (roundedTotal < billAmount) {
-            roundedTotal = ceil(billAmount)
+        if (targetTotal < billAmount) {
+            targetTotal = if (isSplitMode) {
+                ceil(perPersonTotal) * numGuests
+            } else {
+                ceil(billAmount)
+            }
         }
 
-        val newTip = roundedTotal - billAmount
-        if (billAmount > 0) {
-            val newPercentage = (newTip / billAmount) * 100
-            tipPercentageInput = "%.4f".format(newPercentage).trimEnd('0').trimEnd('.')
-        }
+        val newTip = targetTotal - billAmount
+        val newPercentage = (newTip / billAmount) * 100
+        tipPercentageInput = "%.4f".format(newPercentage).trimEnd('0').trimEnd('.')
     }
 
     fun adjustTip(delta: Double) {
-        if (billAmount > 0) {
-            val newTip = (tipAmount + delta).coerceAtLeast(0.0)
-            val newPercentage = (newTip / billAmount) * 100
-            tipPercentageInput = "%.4f".format(newPercentage).trimEnd('0').trimEnd('.')
+        if (billAmount <= 0) return
+        
+        val newTip = if (isSplitMode) {
+            ((perPersonTip + delta).coerceAtLeast(0.0)) * numGuests
+        } else {
+            (tipAmount + delta).coerceAtLeast(0.0)
         }
+        
+        val newPercentage = (newTip / billAmount) * 100
+        tipPercentageInput = "%.4f".format(newPercentage).trimEnd('0').trimEnd('.')
     }
 
     fun updateDefaultPercentage(percentage: Float) {
