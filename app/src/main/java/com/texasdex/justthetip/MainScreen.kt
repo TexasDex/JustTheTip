@@ -192,15 +192,17 @@ fun MainScreen(
             ) {
                 Button(
                     onClick = { viewModel.roundTip() },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1.2f),
+                    contentPadding = PaddingValues(horizontal = 4.dp)
                 ) {
-                    Text("Round Tip", fontSize = 12.sp)
+                    Text("Round Tip", fontSize = 12.sp, maxLines = 1)
                 }
                 Button(
                     onClick = { viewModel.roundTotal() },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1.2f),
+                    contentPadding = PaddingValues(horizontal = 4.dp)
                 ) {
-                    Text("Round Total", fontSize = 12.sp)
+                    Text("Round Total", fontSize = 12.sp, maxLines = 1)
                 }
                 Button(
                     onClick = { viewModel.toggleSplitMode() },
@@ -209,9 +211,10 @@ fun MainScreen(
                     } else {
                         ButtonDefaults.filledTonalButtonColors()
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(0.6f),
+                    contentPadding = PaddingValues(horizontal = 4.dp)
                 ) {
-                    Text("Split", fontSize = 12.sp)
+                    Text("Split", fontSize = 12.sp, maxLines = 1)
                 }
             }
 
